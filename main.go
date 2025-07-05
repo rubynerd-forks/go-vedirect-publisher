@@ -39,6 +39,13 @@ type Config struct {
 	}
 }
 
+type Service struct {
+	Config *Config
+
+	MQTT       mqtt.Client
+	OutputFile *os.File
+}
+
 func main() {
 	c := new(Config)
 	flag.StringVar(&c.device, "dev", "/dev/ttyUSB0", "full path to serial device node")
@@ -60,8 +67,11 @@ func main() {
 		os.Exit(0)
 	}
 
+	svc := &Service{
+		Config: c,
+	}
+
 	// Mqtt Setup
-	var mqttClient mqtt.Client
 	if c.MQTT.Topic != "" {
 		opts := *mqtt.NewClientOptions()
 		opts.SetMaxReconnectInterval(1 * time.Second)
@@ -89,8 +99,8 @@ func main() {
 		}
 		opts.AddBroker(c.MQTT.Server)
 
-		mqttClient = mqtt.NewClient(&opts)
-		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+		svc.MQTT = mqtt.NewClient(&opts)
+		if token := svc.MQTT.Connect(); token.Wait() && token.Error() != nil {
 			fmt.Println(token.Error())
 			return
 		}
@@ -100,17 +110,15 @@ func main() {
 	}
 
 	// file output setup
-	var outFileHandle *os.File
 	if c.outFile != "" {
 		log.Printf("Saving data to: %s", c.outFile)
 		var err error
-		outFileHandle, err = os.OpenFile(c.outFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
+		svc.OutputFile, err = os.OpenFile(c.outFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		defer outFileHandle.Close()
-
+		defer svc.OutputFile.Close()
 	}
 
 	var reader io.Reader
@@ -146,11 +154,11 @@ func main() {
 			}
 
 			if c.MQTT.Topic != "" {
-				mqttClient.Publish(c.MQTT.Topic, 1, false, jsonPayload)
+				svc.MQTT.Publish(c.MQTT.Topic, 1, false, jsonPayload)
 			}
 
 			if c.outFile != "" {
-				_, err := outFileHandle.Write(jsonPayload)
+				_, err := svc.OutputFile.Write(jsonPayload)
 				if err != nil {
 					log.Fatal(err)
 				}
