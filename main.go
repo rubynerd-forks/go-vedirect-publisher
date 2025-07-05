@@ -30,6 +30,10 @@ type Config struct {
 	verbose bool
 	ver     bool
 
+	// Auto mode detects & streams from all connected VE.Direct-USB bridges.
+	// CAUTION: not hot-plug safe, restart required to detect new devices.
+	Auto bool
+
 	MQTT struct {
 		Server  string
 		Topic   string
@@ -58,6 +62,8 @@ func main() {
 
 	flag.StringVar(&c.outFile, "out-file", "", "File to write json data to")
 	flag.BoolVar(&c.verbose, "verbose", false, "Verbose Output")
+
+	flag.BoolVar(&c.Auto, "auto", false, "Auto detect VE.Direct-USB bridges")
 
 	flag.BoolVar(&c.ver, "v", false, "Print Version")
 	flag.Parse()
