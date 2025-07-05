@@ -121,18 +121,22 @@ func main() {
 		defer svc.OutputFile.Close()
 	}
 
+	svc.streamFromPath(c.device)
+}
+
+func (svc *Service) streamFromPath(path string) {
 	var reader io.Reader
 
-	stat, err := os.Stat(c.device)
+	stat, err := os.Stat(path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Should probably be in go-vedirect package
 	if stat.Mode().IsRegular() {
-		reader = vedirect.OpenFile(c.device)
+		reader = vedirect.OpenFile(path)
 	} else {
-		reader = vedirect.OpenSerial(c.device)
+		reader = vedirect.OpenSerial(path)
 	}
 
 	s := vedirect.NewStream(reader)
@@ -149,15 +153,15 @@ func main() {
 				log.Fatal(err)
 			}
 
-			if c.verbose {
+			if svc.Config.verbose {
 				log.Println(string(jsonPayload))
 			}
 
-			if c.MQTT.Topic != "" {
-				svc.MQTT.Publish(c.MQTT.Topic, 1, false, jsonPayload)
+			if svc.MQTT != nil {
+				svc.MQTT.Publish(svc.Config.MQTT.Topic, 1, false, jsonPayload)
 			}
 
-			if c.outFile != "" {
+			if svc.OutputFile != nil {
 				_, err := svc.OutputFile.Write(jsonPayload)
 				if err != nil {
 					log.Fatal(err)
