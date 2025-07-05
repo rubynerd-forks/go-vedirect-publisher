@@ -11,10 +11,12 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/seanhood/go-vedirect/vedirect"
+	"go.bug.st/serial/enumerator"
 )
 
 var (
@@ -127,10 +129,44 @@ func main() {
 		defer svc.OutputFile.Close()
 	}
 
-	svc.streamFromPath(c.device)
+	if c.outFile == "" && c.MQTT.Topic == "" {
+		log.Fatal("No output configured, please set -out-file or -mqtt.topic")
+	}
+
+	if c.Auto {
+		// Create an enumerator, search for all VE.Direct-USB bridges
+		ports, err := enumerator.GetDetailedPortsList()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Create a wait group to track streamer goroutines.
+		wg := &sync.WaitGroup{}
+		wg.Add(1) // Add one for the main goroutine that will start the streamers.
+
+		for _, port := range ports {
+			if port.Product == "VE Direct cable" {
+				fmt.Printf("Starting streamer: %s (sn=%s)\n", port.Name, port.SerialNumber)
+				wg.Add(1)
+
+				go func() {
+					defer wg.Done()
+
+					svc.streamFromPath(port.Name, map[string]string{
+						"vedirect_serial": port.SerialNumber,
+					})
+				}()
+			}
+		}
+
+		wg.Done() // Mark the main goroutine as done, so we can wait for all streamers.
+		wg.Wait()
+	} else {
+		svc.streamFromPath(c.device, map[string]string{})
+	}
 }
 
-func (svc *Service) streamFromPath(path string) {
+func (svc *Service) streamFromPath(path string, extras map[string]string) {
 	var reader io.Reader
 
 	stat, err := os.Stat(path)
@@ -153,6 +189,11 @@ func (svc *Service) streamFromPath(path string) {
 			fields := b.Fields()
 
 			fields["timestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
+
+			// Copy any extra fields into the outgoing payload.
+			for k, v := range extras {
+				fields[k] = v
+			}
 
 			jsonPayload, err := json.Marshal(fields)
 			if err != nil {
