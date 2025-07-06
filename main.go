@@ -142,7 +142,6 @@ func main() {
 
 		// Create a wait group to track streamer goroutines.
 		wg := &sync.WaitGroup{}
-		wg.Add(1) // Add one for the main goroutine that will start the streamers.
 
 		for _, port := range ports {
 			if port.Product == "VE Direct cable" {
@@ -159,7 +158,6 @@ func main() {
 			}
 		}
 
-		wg.Done() // Mark the main goroutine as done, so we can wait for all streamers.
 		wg.Wait()
 	} else {
 		svc.streamFromPath(c.device, map[string]string{})
