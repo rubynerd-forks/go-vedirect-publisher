@@ -36,6 +36,10 @@ type Config struct {
 	// CAUTION: not hot-plug safe, restart required to detect new devices.
 	Auto bool
 
+	// Match filters enumerated ports by name when used with Auto mode.
+	// Takes precedence over default product name matching.
+	Match string
+
 	MQTT struct {
 		Server  string
 		Topic   string
@@ -66,6 +70,7 @@ func main() {
 	flag.BoolVar(&c.verbose, "verbose", false, "Verbose Output")
 
 	flag.BoolVar(&c.Auto, "auto", false, "Auto detect VE.Direct-USB bridges")
+	flag.StringVar(&c.Match, "match", "", "Filter enumerated ports by name (used with -auto)")
 
 	flag.BoolVar(&c.ver, "v", false, "Print Version")
 	flag.Parse()
@@ -144,7 +149,15 @@ func main() {
 		wg := &sync.WaitGroup{}
 
 		for _, port := range ports {
-			if port.Product == "VE Direct cable" {
+			// Match by port name if -match flag is provided, otherwise match by product name
+			shouldStart := false
+			if c.Match != "" {
+				shouldStart = port.Name == c.Match
+			} else {
+				shouldStart = port.Product == "VE Direct cable"
+			}
+
+			if shouldStart {
 				fmt.Printf("Starting streamer: %s (sn=%s)\n", port.Name, port.SerialNumber)
 				wg.Add(1)
 
