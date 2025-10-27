@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -149,10 +150,10 @@ func main() {
 		wg := &sync.WaitGroup{}
 
 		for _, port := range ports {
-			// Match by port name if -match flag is provided, otherwise match by product name
+			// Match by port name if -match flag is provided, otherwise find by product name constant
 			shouldStart := false
 			if c.Match != "" {
-				shouldStart = port.Name == c.Match
+				shouldStart = strings.Contains(port.Name, c.Match)
 			} else {
 				shouldStart = port.Product == "VE Direct cable"
 			}
@@ -161,13 +162,14 @@ func main() {
 				fmt.Printf("Starting streamer: %s (sn=%s)\n", port.Name, port.SerialNumber)
 				wg.Add(1)
 
-				go func() {
+				go func(port *enumerator.PortDetails) {
 					defer wg.Done()
 
 					svc.streamFromPath(port.Name, map[string]string{
 						"vedirect_serial": port.SerialNumber,
+						"vedirect_port":   port.Name,
 					})
-				}()
+				}(port)
 			}
 		}
 
