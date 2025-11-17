@@ -41,6 +41,9 @@ type Config struct {
 	// Takes precedence over default product name matching.
 	Match string
 
+	// Watchdog exits with error if no MQTT message published in 60 seconds
+	Watchdog bool
+
 	MQTT struct {
 		Server  string
 		Topic   string
@@ -53,8 +56,10 @@ type Config struct {
 type Service struct {
 	Config *Config
 
-	MQTT       mqtt.Client
-	OutputFile *os.File
+	MQTT           mqtt.Client
+	OutputFile     *os.File
+	lastPublishMux sync.Mutex
+	lastPublish    time.Time
 }
 
 func main() {
@@ -72,6 +77,7 @@ func main() {
 
 	flag.BoolVar(&c.Auto, "auto", false, "Auto detect VE.Direct-USB bridges")
 	flag.StringVar(&c.Match, "match", "", "Filter enumerated ports by name (used with -auto)")
+	flag.BoolVar(&c.Watchdog, "watchdog", false, "Exit with error if no MQTT message published in 60 seconds")
 
 	flag.BoolVar(&c.ver, "v", false, "Print Version")
 	flag.Parse()
@@ -137,6 +143,16 @@ func main() {
 
 	if c.outFile == "" && c.MQTT.Topic == "" {
 		log.Fatal("No output configured, please set -out-file or -mqtt.topic")
+	}
+
+	if c.Watchdog && c.MQTT.Topic == "" {
+		log.Fatal("Watchdog requires MQTT to be configured")
+	}
+
+	// Start watchdog if enabled
+	if c.Watchdog {
+		svc.lastPublish = time.Now()
+		go svc.watchdog()
 	}
 
 	if c.Auto {
@@ -218,7 +234,12 @@ func (svc *Service) streamFromPath(path string, extras map[string]string) {
 			}
 
 			if svc.MQTT != nil {
-				svc.MQTT.Publish(svc.Config.MQTT.Topic, 1, false, jsonPayload)
+				token := svc.MQTT.Publish(svc.Config.MQTT.Topic, 1, false, jsonPayload)
+				if token.Wait() && token.Error() == nil {
+					svc.lastPublishMux.Lock()
+					svc.lastPublish = time.Now()
+					svc.lastPublishMux.Unlock()
+				}
 			}
 
 			if svc.OutputFile != nil {
@@ -230,6 +251,22 @@ func (svc *Service) streamFromPath(path string, extras map[string]string) {
 
 		} else {
 			log.Println("Bad block, skipping:", b)
+		}
+	}
+}
+
+func (svc *Service) watchdog() {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		svc.lastPublishMux.Lock()
+		elapsed := time.Since(svc.lastPublish)
+		svc.lastPublishMux.Unlock()
+
+		if elapsed > 60*time.Second {
+			log.Printf("ERROR: No MQTT message published in %.0f seconds\n", elapsed.Seconds())
+			os.Exit(1)
 		}
 	}
 }
