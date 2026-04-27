@@ -138,6 +138,21 @@ func main() {
 		log.Fatalf("Error parsing extras: %v", err)
 	}
 
+	// Inject version information into all MQTT messages
+	if _, exists := extrasMap["publisher_version"]; !exists {
+		extrasMap["publisher_version"] = version
+	}
+	if commit != "" && commit != "dev" {
+		if _, exists := extrasMap["publisher_commit"]; !exists {
+			extrasMap["publisher_commit"] = commit
+		}
+	}
+	if date != "" {
+		if _, exists := extrasMap["publisher_build_date"]; !exists {
+			extrasMap["publisher_build_date"] = date
+		}
+	}
+
 	// Set default device if none specified and not in auto mode
 	if len(c.device) == 0 && !c.Auto {
 		c.device = DeviceList{"/dev/ttyUSB0"}

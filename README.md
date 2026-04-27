@@ -17,6 +17,46 @@ go-vedirect-publisher has currently been tested with Mosquitto MQTT Server and A
 ## Features
 - Send payload to an MQTT Server
 - Save payload to file
+- Multi-device support via repeated `-dev` flags
+- Custom MQTT fields via `--extras` parameter
+- Version information included in MQTT messages
+
+## Installation
+
+### Download Pre-built Binaries
+
+Download the latest release for your platform from the [Releases page](https://github.com/rubynerd-forks/go-vedirect-publisher/releases).
+
+**Supported platforms:**
+- Linux (x86_64, ARM64, ARMv6, ARMv7, MIPS)
+- macOS (x86_64, ARM64)
+
+**Example:**
+```bash
+# Download Linux AMD64 version
+curl -LO https://github.com/rubynerd-forks/go-vedirect-publisher/releases/latest/download/go-vedirect-publisher_v0.1.0_Linux_x86_64.tar.gz
+
+# Verify checksum
+curl -LO https://github.com/rubynerd-forks/go-vedirect-publisher/releases/latest/download/checksums.txt
+sha256sum -c checksums.txt --ignore-missing
+
+# Extract
+tar xzf go-vedirect-publisher_v0.1.0_Linux_x86_64.tar.gz
+
+# Run
+./go-vedirect-publisher -v
+```
+
+### Build from Source
+
+```bash
+git clone https://github.com/rubynerd-forks/go-vedirect-publisher
+cd go-vedirect-publisher
+go build
+```
+
+**Requirements:**
+- Go 1.22 or later
 
 ## Usage
 ```
@@ -39,6 +79,51 @@ Usage of ./bin/go-vedirect:
   -verbose
 		Verbose Output
 ```
+
+## Releases
+
+This project uses semantic versioning and automated releases via GitHub Actions.
+
+### Creating a Release
+
+Maintainers can create a release by tagging a commit:
+
+```bash
+git tag -a v0.2.0 -m "Release v0.2.0: Description of changes"
+git push origin v0.2.0
+```
+
+The GitHub Actions workflow will automatically:
+1. Run tests and security scans
+2. Build binaries for all platforms
+3. Generate SBOM (Software Bill of Materials)
+4. Create GitHub release with artifacts
+5. Generate changelog
+
+### Security
+
+All releases include:
+- **Checksums** (SHA256) for all binaries
+- **SBOM** in SPDX and CycloneDX formats
+- **Vulnerability scanning** results
+- **Reproducible builds** (verifiable via ldflags)
+
+### Version Information
+
+Each binary includes version information accessible via `-v` flag:
+
+```bash
+./go-vedirect-publisher -v
+# Output:
+# v0.1.0
+# commit: abc123def456
+# built at: 2026-02-01T22:30:15Z
+```
+
+Version information is also included in all MQTT messages:
+- `publisher_version`: Semantic version (e.g., "v0.1.0")
+- `publisher_commit`: Git commit hash
+- `publisher_build_date`: Build timestamp
 
 ## Roadmap
 - Tests

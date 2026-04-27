@@ -1,28 +1,121 @@
+version: 2
+
 before:
   hooks:
     - go mod download
+    - go mod verify
+
 builds:
-  - env:
+  - id: vedirect-publisher
+    main: ./
+    binary: go-vedirect-publisher
+    env:
+      - CGO_ENABLED=0
     goos:
       - linux
       - darwin
     goarch:
-      - mips
       - amd64
+      - arm64      # Raspberry Pi 3/4, ARM servers
+      - mips       # Teltonika RUT955 router
+      - arm        # Raspberry Pi 1/2, older ARM devices
     gomips:
-      - softfloat
+      - softfloat  # Required for RUT955
+    goarm:
+      - "6"        # ARMv6 (Raspberry Pi Zero/1)
+      - "7"        # ARMv7 (Raspberry Pi 2/3)
+    ignore:
+      - goos: darwin
+        goarch: mips
+      - goos: darwin
+        goarch: arm
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.FullCommit}}
+      - -X main.date={{.Date}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      amd64: x86_64
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+      {{- if .Mips }}_{{ .Mips }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+
 checksum:
   name_template: 'checksums.txt'
+  algorithm: sha256
+
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: "{{ incpatch .Version }}-next"
+
 changelog:
   sort: asc
+  use: github
   filters:
     exclude:
       - '^docs:'
       - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - 'Merge pull request'
+      - 'Merge branch'
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Security
+      regexp: '^.*?sec(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Others
+      order: 999
+
+sboms:
+  - id: archive
+    artifacts: archive
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_sbom_spdx.json"
+  - id: source
+    artifacts: source
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_sbom_cyclonedx.json"
+
+release:
+  github:
+    owner: rubynerd-forks
+    name: go-vedirect-publisher
+  draft: false
+  prerelease: auto
+  mode: append
+  header: |
+    ## VE.Direct to MQTT Publisher {{ .Tag }}
+
+    Release of go-vedirect-publisher for various platforms including embedded MIPS routers.
+
+    ### Supported Platforms
+    - Linux (x86_64, ARM64, ARMv6, ARMv7, MIPS softfloat)
+    - macOS (x86_64, ARM64)
+
+  footer: |
+    ### Security
+    - All binaries built with reproducible builds
+    - SHA256 checksums: see `checksums.txt`
+    - SBOM included in SPDX and CycloneDX formats
+
+    **Full Changelog**: https://github.com/rubynerd-forks/go-vedirect-publisher/compare/{{ .PreviousTag }}...{{ .Tag }}
