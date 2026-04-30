@@ -360,7 +360,7 @@ func (svc *Service) streamFromPath(path string, extras map[string]string) {
 			}
 
 		} else {
-			log.Println("Bad block, skipping:", b)
+			log.Printf("Bad block on %s, skipping (checksum residue=%d, parsed fields=%v)", path, checksum, b.Fields())
 		}
 	}
 }
