@@ -308,19 +308,28 @@ func (svc *Service) streamFromPath(path string, extras map[string]string) {
 
 	stat, err := os.Stat(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("stat %s: %v; aborting streamer for this device", path, err)
+		return
 	}
 
 	// Should probably be in go-vedirect package
 	if stat.Mode().IsRegular() {
-		reader = vedirect.OpenFile(path)
+		reader, err = vedirect.OpenFile(path)
 	} else {
-		reader = vedirect.OpenSerial(path)
+		reader, err = vedirect.OpenSerial(path)
+	}
+	if err != nil {
+		log.Printf("open %s: %v; aborting streamer for this device", path, err)
+		return
 	}
 
 	s := vedirect.NewStream(reader)
 	for {
-		b, checksum := s.ReadBlock()
+		b, checksum, err := s.ReadBlock()
+		if err != nil {
+			log.Printf("read %s: %v; aborting streamer for this device", path, err)
+			return
+		}
 		if checksum == 0 {
 
 			fields := b.Fields()

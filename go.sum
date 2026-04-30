@@ -8,8 +8,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rubynerd-forks/go-serial v0.0.0-20250705232342-d80d66543bcc h1:CRsiuBzQpr+ly9vCvQVBOS4mRW0aV2H9Wspsm2MNxr0=
 github.com/rubynerd-forks/go-serial v0.0.0-20250705232342-d80d66543bcc/go.mod h1:nofMJxTeNVny/m6+KaafC6vJGj3miwQZ6vW4BZUGJPI=
-github.com/rubynerd-forks/go-vedirect v0.0.0-20260430232914-79673804bef4 h1:yD19O3oJNurvqyAwYeyXTQUYxNnrxasKNzyQnrY3/IA=
-github.com/rubynerd-forks/go-vedirect v0.0.0-20260430232914-79673804bef4/go.mod h1:fIdTdEIRT1H8fpFUC2cWK7NHnEjFcLBusRFt0ews0Rs=
+github.com/rubynerd-forks/go-vedirect v0.0.0-20260430235030-6acd602b47b6 h1:27k7osvRSm5s2WmSHKkx4pcs6d8cv+1x55oRq1m1PKY=
+github.com/rubynerd-forks/go-vedirect v0.0.0-20260430235030-6acd602b47b6/go.mod h1:fIdTdEIRT1H8fpFUC2cWK7NHnEjFcLBusRFt0ews0Rs=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07 h1:UyzmZLoiDWMRywV4DUYb9Fbt8uiOSooupjTq10vpvnU=

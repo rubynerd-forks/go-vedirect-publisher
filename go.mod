@@ -17,4 +17,4 @@ require (
 
 replace go.bug.st/serial => github.com/rubynerd-forks/go-serial v0.0.0-20250705232342-d80d66543bcc
 
-replace github.com/seanhood/go-vedirect => github.com/rubynerd-forks/go-vedirect v0.0.0-20260430232914-79673804bef4
+replace github.com/seanhood/go-vedirect => github.com/rubynerd-forks/go-vedirect v0.0.0-20260430235030-6acd602b47b6
