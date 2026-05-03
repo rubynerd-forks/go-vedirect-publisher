@@ -56,7 +56,7 @@ go build
 ```
 
 **Requirements:**
-- Go 1.22 or later
+- Go 1.25 or later
 
 ## Usage
 ```

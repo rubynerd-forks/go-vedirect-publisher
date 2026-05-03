@@ -1,6 +1,6 @@
 module github.com/seanhood/go-vedirect-publisher
 
-go 1.22
+go 1.25
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.2.0
